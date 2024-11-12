@@ -1,0 +1,37 @@
+I1111 16:50:28.446519 139760651822912 _timer.py:72] train: 0.0 minutes
+Traceback (most recent call last):
+  File "/home/users/j_miller/mlde_Josh/bin/main.py", line 64, in <module>
+    app.run(main)
+  File "/home/users/j_miller/miniforge3/envs/mlde/lib/python3.9/site-packages/absl/app.py", line 308, in run
+    _run_main(main, args)
+  File "/home/users/j_miller/miniforge3/envs/mlde/lib/python3.9/site-packages/absl/app.py", line 254, in _run_main
+    sys.exit(main(argv))
+  File "/home/users/j_miller/miniforge3/envs/mlde/lib/python3.9/site-packages/knockknock/slack_sender.py", line 105, in wrapper_sender
+    raise ex
+  File "/home/users/j_miller/miniforge3/envs/mlde/lib/python3.9/site-packages/knockknock/slack_sender.py", line 63, in wrapper_sender
+    value = func(*args, **kwargs)
+  File "/home/users/j_miller/mlde_Josh/bin/main.py", line 58, in main
+    run_lib.train(FLAGS.config, FLAGS.workdir)
+  File "/home/users/j_miller/miniforge3/envs/mlde/lib/python3.9/contextlib.py", line 79, in inner
+    return func(*args, **kwds)
+  File "/home/users/j_miller/mlde/src/ml_downscaling_emulator/run_lib.py", line 123, in train
+    train_dl, _, _ = get_dataloader(config.data.dataset_name, config.data.dataset_name, config.data.dataset_name, config.data.input_transform_key, target_xfm_keys, transform_dir, batch_size=config.training.batch_size, split="train", ensemble_members=dataset_meta.ensemble_members(), include_time_inputs=config.data.time_inputs, evaluation=False)
+  File "/home/users/j_miller/miniforge3/envs/mlde/lib/python3.9/site-packages/mlde_utils/__init__.py", line 130, in ensemble_members
+    return self.config()["ensemble_members"]
+  File "/home/users/j_miller/miniforge3/envs/mlde/lib/python3.9/site-packages/mlde_utils/__init__.py", line 126, in config
+    with open(self.config_path(), "r") as f:
+  File "/home/users/j_miller/miniforge3/envs/mlde/lib/python3.9/site-packages/mlde_utils/__init__.py", line 123, in config_path
+    return self.path() / "ds-config.yml"
+  File "/home/users/j_miller/miniforge3/envs/mlde/lib/python3.9/site-packages/mlde_utils/__init__.py", line 111, in path
+    return Path(os.getenv("DERIVED_DATA"), "moose", "nc-datasets", self.name)
+  File "/home/users/j_miller/miniforge3/envs/mlde/lib/python3.9/pathlib.py", line 1082, in __new__
+    self = cls._from_parts(args, init=False)
+  File "/home/users/j_miller/miniforge3/envs/mlde/lib/python3.9/pathlib.py", line 707, in _from_parts
+    drv, root, parts = self._parse_args(args)
+  File "/home/users/j_miller/miniforge3/envs/mlde/lib/python3.9/pathlib.py", line 691, in _parse_args
+    a = os.fspath(a)
+TypeError: expected str, bytes or os.PathLike object, not NoneType
+
+real	0m12.339s
+user	0m2.422s
+sys	0m0.783s
