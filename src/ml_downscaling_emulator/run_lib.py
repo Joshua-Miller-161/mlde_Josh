@@ -21,7 +21,8 @@
 
 # pylint: skip-file
 """Training for score-based generative models. """
-
+import sys
+sys.dont_write_bytecode = True
 from collections import defaultdict
 import itertools
 import os
@@ -45,9 +46,9 @@ from tqdm.contrib.logging import logging_redirect_tqdm
 from torch.utils.tensorboard import SummaryWriter
 from .utils import save_checkpoint, restore_checkpoint
 
-from ml_downscaling_emulator.data import get_dataloader
-from mlde_utils import DatasetMetadata
-from ml_downscaling_emulator.training import log_epoch, track_run
+from .data import get_dataloader
+from .mlde_josh_utils import DatasetMetadata
+from .training import log_epoch, track_run
 
 FLAGS = flags.FLAGS
 
@@ -115,11 +116,11 @@ def train(config, workdir):
 
   with track_run(
         EXPERIMENT_NAME, run_name, run_config, ["score_sde"], tb_dir
-    ) as (wandb_run, writer):
+    ) as writer:
     # Build dataloaders
     dataset_meta = DatasetMetadata(config.data.dataset_name)
-    train_dl, _, _ = get_dataloader(config.data.dataset_name, config.data.dataset_name, config.data.dataset_name, config.data.input_transform_key, target_xfm_keys, transform_dir, batch_size=config.training.batch_size, split="train", ensemble_members=dataset_meta.ensemble_members(), include_time_inputs=config.data.time_inputs, evaluation=False)
-    eval_dl, _, _ = get_dataloader(config.data.dataset_name, config.data.dataset_name, config.data.dataset_name, config.data.input_transform_key, target_xfm_keys, transform_dir, batch_size=config.training.batch_size, split="val", ensemble_members=dataset_meta.ensemble_members(), include_time_inputs=config.data.time_inputs, evaluation=False, shuffle=False)
+    train_dl, _, _ = get_dataloader(config.data.dataset_name, config.data.dataset_name, config.data.dataset_name, config.data.input_transform_key, target_xfm_keys, transform_dir, batch_size=config.training.batch_size, split="train", include_time_inputs=config.data.time_inputs, evaluation=False)
+    eval_dl, _, _  = get_dataloader(config.data.dataset_name, config.data.dataset_name, config.data.dataset_name, config.data.input_transform_key, target_xfm_keys, transform_dir, batch_size=config.training.batch_size, split="val", include_time_inputs=config.data.time_inputs, evaluation=False, shuffle=False)
 
     # Initialize model.
     score_model = mutils.create_model(config)
@@ -222,7 +223,7 @@ def train(config, workdir):
       val_set_loss = val_loss(config, eval_dl, eval_step_fn, state)
       epoch_metrics = {"epoch/train/loss": train_set_loss, "epoch/val/loss": val_set_loss}
 
-      log_epoch(state['epoch'], epoch_metrics, wandb_run, writer)
+      log_epoch(state['epoch'], epoch_metrics, writer)
 
       if (state['epoch'] != 0 and state['epoch'] % config.training.snapshot_freq == 0) or state['epoch'] == num_train_epochs:
         # Save the checkpoint.

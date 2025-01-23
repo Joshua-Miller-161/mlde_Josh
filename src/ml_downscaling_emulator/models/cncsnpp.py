@@ -18,14 +18,18 @@
 # to allow for conditional modelling
 
 # pylint: skip-file
-
-from . import utils, layers, layerspp, normalization
+import sys
+sys.dont_write_bytecode = True
+import os
 import torch.nn as nn
 import functools
 import torch
 import numpy as np
 
-from mlde_utils.training.dataset import get_variables
+print(" >> >> Inside cncsnpp.py", os.getcwd())
+from . import utils, layers, layerspp, normalization
+from ..mlde_josh_utils.training.dataset import get_variables
+
 
 ResnetBlockDDPM = layerspp.ResnetBlockDDPMpp
 ResnetBlockBigGAN = layerspp.ResnetBlockBigGANpp

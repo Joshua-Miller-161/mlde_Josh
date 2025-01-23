@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import xarray as xr
 
-from mlde_utils.training.dataset import get_dataset, get_variables
+from .mlde_josh_utils.training.dataset import get_dataset, get_variables
 
 TIME_RANGE = (
     cftime.Datetime360Day(1980, 12, 1, 12, 0, 0, 0, has_year_zero=True),
@@ -63,7 +63,7 @@ class UKCPLocalDataset(Dataset):
         )
 
     def __len__(self):
-        return len(self.ds.time) * len(self.ds.ensemble_member)
+        return len(self.ds.time) # * len(self.ds.ensemble_member)
 
     def __getitem__(self, idx):
         subds = self.sel(idx)
@@ -80,8 +80,10 @@ class UKCPLocalDataset(Dataset):
         return cond, x, time
 
     def sel(self, idx):
-        em_idx, time_idx = divmod(idx, len(self.ds.time))
-        return self.ds.isel(time=time_idx, ensemble_member=em_idx)
+        #em_idx, time_idx = divmod(idx, len(self.ds.time))
+        #return self.ds.isel(time=time_idx, ensemble_member=em_idx)
+        time_idx = idx
+        return self.ds.isel(time=time_idx)
 
 
 def build_dataloader(
@@ -113,7 +115,7 @@ def get_dataloader(
     transform_dir,
     batch_size,
     split,
-    ensemble_members,
+    #ensemble_members,
     include_time_inputs,
     evaluation=False,
     shuffle=True,
@@ -134,6 +136,7 @@ def get_dataloader(
     Returns:
       data_loader, transform, target_transform.
     """
+
     xr_data, transform, target_transform = get_dataset(
         active_dataset_name,
         model_src_dataset_name,
@@ -142,7 +145,7 @@ def get_dataloader(
         target_transform_keys,
         transform_dir,
         split,
-        ensemble_members,
+        #ensemble_members,
         evaluation,
     )
 
@@ -157,6 +160,7 @@ def get_dataloader(
         include_time_inputs,
     )
 
+    #return data_loader
     return data_loader, transform, target_transform
 
 
@@ -166,44 +170,75 @@ def np_samples_to_xr(np_samples, target_transform, target_vars, coords, cf_data_
     """
     coords = {**dict(coords)}
 
-    pred_dims = ["ensemble_member", "time", "grid_latitude", "grid_longitude"]
+    #pred_dims = ["ensemble_member", "time", "grid_latitude", "grid_longitude"]
+
+    pred_dims = ['time', 'lat', 'lon']
+    print(" >> INSIDE np_samples_to_xr np_samples:", type(np_samples), np.shape(np_samples))
+    print("__________________________________________________________")
+    #print(" >> INSIDE np_samples_to_xr cf_data_vars:", type(cf_data_vars), cf_data_vars)
+    print("__________________________________________________________")
+    print(" >> INSIDE np_samples_to_xr target_vars:", type(target_vars), target_vars)
+    print("__________________________________________________________")
+    print(" >> INSIDE np_samples_to_xr coords:", type(coords), coords)
+    print("__________________________________________________________")
+
+    #----------------------------------------------------------------
+    # Filter cf_data_vars down to the size of the batch
+
+    for var_name in list(cf_data_vars.keys()):
+        ds = cf_data_vars[var_name]
+        print(" >> >> >>", var_name, type(ds), ds)
+        sub_ds = ds.sel(time=coords['time'])
+        print(" >> >> >>", var_name, type(sub_ds), sub_ds)
+        print(" - - - - - - - - - - - - - -")
+    #----------------------------------------------------------------
+    # Replace the target vars in the input dataset with the model's predictions
 
     data_vars = {**cf_data_vars}
     for var_idx, var in enumerate(target_vars):
         # add ensemble member axis to np samples and get just values for current variable
-        np_var_pred = np_samples[np.newaxis, :, var_idx, :]
+        np_var_pred = np.squeeze(np_samples[:, var_idx, ...])
         pred_attrs = {
-            "grid_mapping": "rotated_latitude_longitude",
-            "standard_name": var.replace("target_", "pred_"),
-            # "units": "kg m-2 s-1",
+            #"grid_mapping": "rotated_latitude_longitude",
+            #"standard_name": var.replace("target_", "pred_"),
+            "standard_name": var,
+            #"units": "kg m-2 s-1",
+            "units": "mm/hr"
         }
         pred_var = (pred_dims, np_var_pred, pred_attrs)
-        raw_pred_var = (
-            pred_dims,
-            np_var_pred,
-            {"grid_mapping": "rotated_latitude_longitude"},
-        )
+        # raw_pred_var = (
+        #     pred_dims,
+        #     np_var_pred,
+        #     {"grid_mapping": "rotated_latitude_longitude"},
+        # )
         data_vars.update(
             {
                 var: pred_var,  # don't rename pred var until after inverting target transform
-                var.replace("target_", "raw_pred_"): raw_pred_var,
+                #var.replace("target_", "raw_pred_"): raw_pred_var,
             }
         )
-
+    print("__________________________________________________________")
+    print(" >> >> INSIDE data.np_samples_to_xr")
+    print(" >> >> data vars", data_vars)
+    print("__________________________________________________________")
+    
     samples_ds = target_transform.invert(
         xr.Dataset(data_vars=data_vars, coords=coords, attrs={})
     )
-    samples_ds = samples_ds.rename(
-        {var: var.replace("target_", "pred_") for var in target_vars}
-    )
+    # samples_ds = samples_ds.rename(
+    #     #{var: var.replace("target_", "pred_") for var in target_vars}
+    # )
 
     for var_idx, var in enumerate(target_vars):
         pred_attrs = {
             "grid_mapping": "rotated_latitude_longitude",
-            "standard_name": var.replace("target_", "pred_"),
-            # "units": "kg m-2 s-1",
+            #"standard_name": var.replace("target_", "pred_"),
+            "standard_name": var,
+            #"units": "kg m-2 s-1",
+            "units": "mm/hr"
         }
-        samples_ds[var.replace("target_", "pred_")] = samples_ds[
-            var.replace("target_", "pred_")
-        ].assign_attrs(pred_attrs)
+        # samples_ds[var.replace("target_", "pred_")] = samples_ds[
+        #     var.replace("target_", "pred_")
+        # ].assign_attrs(pred_attrs)
+        samples_ds[var].assign_attrs(pred_attrs)
     return samples_ds

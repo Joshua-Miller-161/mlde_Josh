@@ -1,13 +1,15 @@
+import sys
+sys.dont_write_bytecode = True
+import os
 import pytest
 import shortuuid
 from typer.testing import CliRunner
 
-from mlde_utils import samples_path
-
-from ml_downscaling_emulator.bin import app
+sys.path.append(os.getcwd())
+from src.ml_downscaling_emulator.mlde_josh_utils import samples_path
+from src.ml_downscaling_emulator.bin import app
 
 runner = CliRunner()
-
 
 def test_filter(tmp_path, samples_file):
     time_period = "historic"
@@ -51,7 +53,7 @@ def samples_file(tmp_path, samples_set):
         input_xfm=input_xfm,
         dataset=dataset,
         split=split,
-        ensemble_member=ensemble_member,
+        #ensemble_member=ensemble_member,
     )
     filepath = dirpath / f"predictions-{shortuuid.uuid()}.nc"
 

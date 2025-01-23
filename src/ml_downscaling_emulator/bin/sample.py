@@ -1,14 +1,15 @@
 from codetiming import Timer
 import logging
-from knockknock import slack_sender
 import os
 from pathlib import Path
 import shortuuid
 import typer
 import xarray as xr
+import os
+os.environ["RICH_TRACEBACK"] = "false"
 
-from mlde_utils import samples_path, DEFAULT_ENSEMBLE_MEMBER
-from mlde_utils.training.dataset import load_raw_dataset_split
+from ml_downscaling_emulator.mlde_josh_utils import samples_path, DEFAULT_ENSEMBLE_MEMBER
+from ml_downscaling_emulator.mlde_josh_utils.training.dataset import load_raw_dataset_split
 
 logging.basicConfig(
     level=logging.INFO,
@@ -28,36 +29,46 @@ def callback():
 def _np_samples_to_xr(np_samples, coords, target_transform, cf_data_vars):
     coords = {**dict(coords)}
 
-    pred_pr_dims = ["ensemble_member", "time", "grid_latitude", "grid_longitude"]
+    # pred_pr_dims = ["ensemble_member", "time", "grid_latitude", "grid_longitude"]
+    # pred_pr_attrs = {
+    #     "grid_mapping": "rotated_latitude_longitude",
+    #     "standard_name": "pred_pr",
+    #     "units": "kg m-2 s-1",
+    # }
+
+    pred_pr_dims = ["time", "lat", "lon"]
     pred_pr_attrs = {
-        "grid_mapping": "rotated_latitude_longitude",
         "standard_name": "pred_pr",
-        "units": "kg m-2 s-1",
+        "units": "mm/hr",
     }
     pred_pr_var = (pred_pr_dims, np_samples, pred_pr_attrs)
 
-    data_vars = {**cf_data_vars, "target_pr": pred_pr_var}
+    #data_vars = {**cf_data_vars, "target_pr": pred_pr_var}
+    data_vars = {**cf_data_vars, "precipitation": pred_pr_var}
+
+    #pred_ds = xr.Dataset(data_vars=data_vars, coords=coords, attrs={})
 
     pred_ds = xr.Dataset(data_vars=data_vars, coords=coords, attrs={})
 
     if target_transform is not None:
         pred_ds = target_transform.invert(pred_ds)
 
-    pred_ds = pred_ds.rename({"target_pr": "pred_pr"})
-
+    #pred_ds = pred_ds.rename({"target_pr": "pred_pr"})
+    pred_ds = pred_ds.rename({"precipitation": "pred_pr"})
+    
     return pred_ds
 
 
 def _sample_id(variable: str, eval_ds: xr.Dataset) -> xr.Dataset:
     """Create a Dataset of pr samples set to the values the given variable from the dataset."""
-    cf_data_vars = {
-        key: eval_ds.data_vars[key]
-        for key in [
-            "rotated_latitude_longitude",
-            "time_bnds",
-            "grid_latitude_bnds",
-            "grid_longitude_bnds",
-        ]
+    # cf_data_vars = {
+    #     key: eval_ds.data_vars[key]
+    #     for key in [ "rotated_latitude_longitude","time_bnds","grid_latitude_bnds","grid_longitude_bnds",]
+    #     if key in eval_ds.variables
+    # }
+
+    cf_data_vars = {key: eval_ds.data_vars[key]
+        for key in [ "time","lat","lon"]
         if key in eval_ds.variables
     }
     coords = eval_ds.coords
@@ -71,7 +82,6 @@ def _sample_id(variable: str, eval_ds: xr.Dataset) -> xr.Dataset:
 
 @app.command()
 @Timer(name="sample", text="{name}: {minutes:.1f} minutes", logger=logging.info)
-@slack_sender(webhook_url=os.getenv("KK_SLACK_WH_URL"), channel="general")
 def as_input(
     workdir: Path,
     dataset: str = typer.Option(...),
@@ -90,13 +100,19 @@ def as_input(
         dataset=dataset,
         input_xfm="none",
         split=split,
-        ensemble_member=ensemble_member,
+        #ensemble_member=ensemble_member,
     )
     os.makedirs(output_dirpath, exist_ok=True)
 
-    eval_ds = load_raw_dataset_split(dataset, split).sel(
-        ensemble_member=[ensemble_member]
-    )
+    # eval_ds = load_raw_dataset_split(dataset, split).sel(
+    #     ensemble_member=[ensemble_member]
+    # )
+    eval_ds = load_raw_dataset_split(dataset, split)
+
+    print(" >> >> INSDE sample.py as_input")
+    print(" >> >> eval_ds", eval_ds)
+    print("______________________________________________")
+
     xr_samples = _sample_id(variable, eval_ds)
 
     output_filepath = os.path.join(output_dirpath, f"predictions-{shortuuid.uuid()}.nc")

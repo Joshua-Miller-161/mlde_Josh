@@ -9,8 +9,8 @@ def get_default_configs():
 
   # training
   training = config.training
-  training.n_epochs = 20
-  training.snapshot_freq = 5
+  training.n_epochs = 10
+  training.snapshot_freq = 2
   training.eval_freq = 5000
 
   # data

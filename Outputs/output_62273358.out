@@ -1,11 +1,25 @@
 ____________________________________________________________________
- >> Running on host gpuhost013.jc.rl.ac.uk
- >> Time is Mon 11 Nov 16:50:14 GMT 2024
+ >> Running on host gpuhost003.jc.rl.ac.uk
+ >> Time is Thu 23 Jan 11:47:58 GMT 2025
  >> Directory is /home/users/j_miller/mlde_Josh
- >> Slurm job ID is 53275446
+ >> Slurm job ID is 62273358
  >> This jobs runs on the following machines:
- >> gpuhost013
+ >> gpuhost003
 ____________________________________________________________________
+
+
+
+
+
+
+
+ INSIDE LOCAL mlde_josh_utils 
+
+
+
+
+ >> >> Inside cncsnpp.py /home/users/j_miller/mlde_Josh
+ >> >> inside predict main config_path /gws/nopw/j04/bris_climdyn/j_miller/temp/config.yml
 ____________________________________________________________________
- >> Ended on: Mon 11 Nov 16:50:29 GMT 2024
+ >> Ended on: Thu 23 Jan 11:48:05 GMT 2025
 ____________________________________________________________________

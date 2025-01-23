@@ -1,13 +1,14 @@
 """Generate samples"""
-
+import sys
+sys.dont_write_bytecode = True
+import os
+os.environ["RICH_TRACEBACK"] = "false"
 from collections import defaultdict
 import itertools
 import os
 from pathlib import Path
-
 from codetiming import Timer
 from dotenv import load_dotenv
-from knockknock import slack_sender
 from ml_collections import config_dict
 import shortuuid
 import torch
@@ -17,38 +18,40 @@ import logging
 from tqdm.contrib.logging import logging_redirect_tqdm
 import xarray as xr
 import yaml
+import numpy as np
 
-from ml_downscaling_emulator.data import get_dataloader, np_samples_to_xr
-from mlde_utils import samples_path, DEFAULT_ENSEMBLE_MEMBER
-from mlde_utils.training.dataset import get_variables
+sys.path.append(os.getcwd())
+from src.ml_downscaling_emulator.data import get_dataloader, np_samples_to_xr
+from src.ml_downscaling_emulator.mlde_josh_utils import samples_path, DEFAULT_ENSEMBLE_MEMBER
+from src.ml_downscaling_emulator.mlde_josh_utils.training.dataset import get_variables
 
-from ml_downscaling_emulator.losses import get_optimizer
-from ml_downscaling_emulator.models.ema import (
+from src.ml_downscaling_emulator.losses import get_optimizer
+from src.ml_downscaling_emulator.models.ema import (
     ExponentialMovingAverage,
 )
-from ml_downscaling_emulator.models.location_params import (
+from src.ml_downscaling_emulator.models.location_params import (
     LocationParams,
 )
 
-from ml_downscaling_emulator.utils import restore_checkpoint
+from src.ml_downscaling_emulator.utils import restore_checkpoint
 
-import ml_downscaling_emulator.models as models  # noqa: F401
-from ml_downscaling_emulator.models import utils as mutils
+from src.ml_downscaling_emulator import models  # noqa: F401
+from src.ml_downscaling_emulator.models import utils as mutils
 
-from ml_downscaling_emulator.models import cncsnpp  # noqa: F401
-from ml_downscaling_emulator.models import cunet  # noqa: F401
-from ml_downscaling_emulator.models import det_cunet  # noqa: F401
+from src.ml_downscaling_emulator.models import cncsnpp  # noqa: F401
+''' from ml_downscaling_emulator.models import cunet ''' # noqa: F401
+''' from ml_downscaling_emulator.models import det_cunet '''  # noqa: F401
 
-from ml_downscaling_emulator.models import (  # noqa: F401
+from src.ml_downscaling_emulator.models import (  # noqa: F401
     layerspp,  # noqa: F401
 )  # noqa: F401
-from ml_downscaling_emulator.models import layers  # noqa: F401
-from ml_downscaling_emulator.models import (  # noqa: F401
+from src.ml_downscaling_emulator.models import layers  # noqa: F401
+from src.ml_downscaling_emulator.models import (  # noqa: F401
     normalization,  # noqa: F401
 )  # noqa: F401
-import ml_downscaling_emulator.sampling as sampling
+from src.ml_downscaling_emulator import sampling
 
-from ml_downscaling_emulator.sde_lib import (
+from src.ml_downscaling_emulator.sde_lib import (
     VESDE,
     VPSDE,
     subVPSDE,
@@ -62,7 +65,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger()
 
-app = typer.Typer()
+app = typer.Typer(pretty_exceptions_enable=False)
 
 
 def load_config(config_path):
@@ -155,6 +158,9 @@ def generate_np_sample_batch(sampling_fn, score_model, config, cond_batch):
 
     # extract numpy array
     samples = samples.cpu().numpy()
+
+    print(" >> >> INSIDE predict.generate_np_sample_batch samples", np.shape(samples), type(samples))
+
     return samples
 
 
@@ -162,15 +168,29 @@ def sample(sampling_fn, state, config, eval_dl, target_transform, target_vars):
     score_model = state["model"]
     location_params = state["location_params"]
 
-    cf_data_vars = {
-        key: eval_dl.dataset.ds.data_vars[key]
-        for key in [
-            "rotated_latitude_longitude",
-            "time_bnds",
-            "grid_latitude_bnds",
-            "grid_longitude_bnds",
-        ]
-    }
+    # cf_data_vars = {
+    #     key: eval_dl.dataset.ds.data_vars[key]
+    #     for key in [
+    #         "rotated_latitude_longitude",
+    #         "time_bnds",
+    #         "grid_latitude_bnds",
+    #         "grid_longitude_bnds",
+    #     ]
+    # }
+    print(" >> >> INSIDE predict.sample")
+    for lol in eval_dl.dataset.ds.data_vars:
+        print(" >> >> eval_dl.dataset.ds.data_vars", lol)
+    
+    # cf_data_vars = {key: eval_dl.dataset.ds.data_vars[key]
+    #     for key in [
+    #         "time",
+    #         "lon",
+    #         "lat"
+    #         ]
+    # }
+    cf_data_vars = {key: eval_dl.dataset.ds.data_vars[key]
+                    for key in list(eval_dl.dataset.ds.data_vars)}
+
 
     xr_sample_batches = []
     with logging_redirect_tqdm():
@@ -214,7 +234,6 @@ def sample(sampling_fn, state, config, eval_dl, target_transform, target_vars):
 
 @app.command()
 @Timer(name="sample", text="{name}: {minutes:.1f} minutes", logger=logger.info)
-@slack_sender(webhook_url=os.getenv("KK_SLACK_WH_URL"), channel="general")
 def main(
     workdir: Path,
     dataset: str = typer.Option(...),
@@ -228,6 +247,9 @@ def main(
 ):
     config_path = os.path.join(workdir, "config.yml")
     config = load_config(config_path)
+
+    print(" >> >> inside predict main config_path", config_path)
+
     if batch_size is not None:
         config.eval.batch_size = batch_size
     with config.unlocked():
@@ -248,7 +270,7 @@ def main(
         dataset=dataset,
         input_xfm=f"{config.data.input_transform_dataset}-{config.data.input_transform_key}",
         split=split,
-        ensemble_member=ensemble_member,
+        #ensemble_member=ensemble_member,
     )
     os.makedirs(output_dirpath, exist_ok=True)
 
@@ -271,7 +293,7 @@ def main(
         target_xfm_keys,
         transform_dir,
         split=split,
-        ensemble_members=[ensemble_member],
+        #ensemble_members=[ensemble_member],
         include_time_inputs=config.data.time_inputs,
         evaluation=True,
         batch_size=config.eval.batch_size,

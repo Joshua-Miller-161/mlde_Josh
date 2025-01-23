@@ -6,8 +6,8 @@ from typing import Callable
 import typer
 import xarray as xr
 
-from mlde_utils import samples_path, samples_glob, TIME_PERIODS
-from mlde_utils.training.dataset import open_raw_dataset_split
+from ..mlde_josh_utils import samples_path, samples_glob, TIME_PERIODS
+from ..mlde_josh_utils.training.dataset import open_raw_dataset_split
 
 from ml_downscaling_emulator.postprocess import xrqm, to_gcm_domain
 

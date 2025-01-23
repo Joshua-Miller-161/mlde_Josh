@@ -1,0 +1,35 @@
+____________________________________________________________________
+ >> Running on host gpuhost015.jc.rl.ac.uk
+ >> Time is Fri 10 Jan 03:55:34 GMT 2025
+ >> Directory is /home/users/j_miller/mlde_Josh
+ >> Slurm job ID is 61151722
+ >> This jobs runs on the following machines:
+ >> gpuhost015
+____________________________________________________________________
+ >> >> Inside cncsnpp.py /home/users/j_miller/mlde_Josh
+
+
+
+
+
+
+
+ INSIDE LOCAL mlde_josh_utils 
+
+
+
+
+ >> >> INSIDE ukcp_local_pr_1em_cncsnpp_continuous /home/users/j_miller/mlde_Josh
+ >> >> INSIDE training/dataset.py ERA5_IMERG_2002-01
+ >> >> target_variables ['precipitation']
+ >> >> INSIDE training/dataset.py ERA5_IMERG_2002-01
+ >> >> target_variables ['precipitation']
+ >> >> INSIDE training/dataset.py ERA5_IMERG_2002-01
+ >> >> target_variables ['precipitation']
+ >> >> INSIDE training/dataset.py ERA5_IMERG_2002-01
+ >> >> target_variables ['precipitation']
+ >> >> INSIDE training/dataset.py ERA5_IMERG_2002-01
+ >> >> target_variables ['precipitation']
+____________________________________________________________________
+ >> Ended on: Fri 10 Jan 03:57:36 GMT 2025
+____________________________________________________________________

@@ -3,9 +3,9 @@ from typing import Callable
 import numpy as np
 import xarray as xr
 
-from mlde_utils.data.remapcon import Remapcon
-from mlde_utils.data.shift_lon_break import ShiftLonBreak
-from mlde_utils.data.select_gcm_domain import SelectGCMDomain
+from .mlde_josh_utils.data.remapcon import Remapcon
+from .mlde_josh_utils.data.shift_lon_break import ShiftLonBreak
+from .mlde_josh_utils.data.select_gcm_domain import SelectGCMDomain
 
 """Postprocessing of samples from an emulator."""
 

@@ -8,7 +8,7 @@ def create_model(config, num_predictors):
     if config.model.name == "u-net":
         return unet.UNet(num_predictors, 1)
 
-from mlde_utils.training.dataset import get_variables
+from ml_downscaling_emulator.mlde_josh_utils.training.dataset import get_variables
 
 ######################################
 # !!!! DETERMINISTIC ONLY       !!!! #

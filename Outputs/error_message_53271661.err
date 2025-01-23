@@ -1,5 +1,0 @@
-/var/spool/slurmd/job53271661/slurm_script: line 41: 69223 Segmentation fault      (core dumped) python3 bin/main.py --config src/ml_downscaling_emulator/configs/subvpsde/ukcp_local_pr_12em_cncsnpp_continuous.py --workdir /work/scratch-nopw2/j_miller/temp --mode train --config.data.dataset_name bham_gcmx-4x_12em_psl-sphum4th-temp4th-vort4th_eqvt_random-season
-
-real	0m0.014s
-user	0m0.001s
-sys	0m0.003s

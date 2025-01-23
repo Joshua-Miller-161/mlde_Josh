@@ -15,8 +15,9 @@
 # limitations under the License.
 
 """Training"""
-
-import ml_downscaling_emulator.run_lib as run_lib
+import sys
+sys.dont_write_bytecode = True
+import os
 from absl import app
 from absl import flags
 from ml_collections.config_flags import config_flags
@@ -24,7 +25,8 @@ import logging
 import os
 from dotenv import load_dotenv
 
-from knockknock import slack_sender
+sys.path.append(os.getcwd())
+from src.ml_downscaling_emulator import run_lib
 
 load_dotenv()  # take environment variables from .env
 
@@ -38,7 +40,6 @@ flags.DEFINE_enum("mode", None, ["train"], "Running mode: train")
 flags.mark_flags_as_required(["workdir", "config", "mode"])
 
 
-@slack_sender(webhook_url=os.getenv("KK_SLACK_WH_URL"), channel="general")
 def main(argv):
     if FLAGS.mode == "train":
         # Create the working directory
